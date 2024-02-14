@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 )
 
 const portNumber = ":8080"
+const versionNumber = "v1.0.176"
 
 var app config.AppConfig
 var session *scs.SessionManager
@@ -59,10 +61,32 @@ func run() (*driver.DB, error) {
 	gob.Register(models.Restriction{})
 	gob.Register(map[string]int{})
 
+	inProduction := flag.Bool("production", true, "Application is in production mode")
+	useCache := flag.Bool("cache", true, "Use template cache")
+	dbHost := flag.String("dbhost", "localhost", "Database host")
+	dbName := flag.String("dbname", "", "Database name")
+	dbUser := flag.String("dbuser", "", "Database user")
+	dbPass := flag.String("dbpass", "", "Database password")
+	dbPort := flag.String("dbport", "5432", "Database port")
+	dbSSL := flag.String("dbssl", "disable", "Database ssl settings (disable, prefer, require)")
+	version := flag.Bool("version", false, "Prints the version number")
+
+	flag.Parse()
+
+	if *dbName == "" || *dbUser == "" {
+		fmt.Println("Required flags missing - no user credentials for db access?")
+		os.Exit(1)
+	}
+
+	if *version == true {
+		fmt.Println(versionNumber)
+	}
+
 	mailChan := make(chan models.MailData)
 	app.MailChan = mailChan
 
-	app.InProduction = false
+	app.InProduction = *inProduction
+	app.UseCache = *useCache
 
 	infoLog = log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime)
 	app.InfoLog = infoLog
@@ -79,7 +103,8 @@ func run() (*driver.DB, error) {
 	app.Session = session
 
 	log.Println("Connecting to database...")
-	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=webappdb user=postgres password=postgres")
+	connectionString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", *dbHost, *dbPort, *dbName, *dbUser, *dbPass, *dbSSL)
+	db, err := driver.ConnectSQL(connectionString)
 	if err != nil {
 		log.Fatal("No connection to database! Terminating ...")
 	}
@@ -92,7 +117,6 @@ func run() (*driver.DB, error) {
 	}
 
 	app.TemplateCache = tc
-	app.UseCache = false
 
 	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
