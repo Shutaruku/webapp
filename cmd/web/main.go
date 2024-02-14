@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/YuanData/webapp/internal/config"
+	"github.com/YuanData/webapp/internal/driver"
 	"github.com/YuanData/webapp/internal/handlers"
 	"github.com/YuanData/webapp/internal/helpers"
 	"github.com/YuanData/webapp/internal/models"
@@ -24,10 +25,17 @@ var infoLog *log.Logger
 var errorLog *log.Logger
 
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.SQL.Close()
+
+	defer close(app.MailChan)
+
+	fmt.Println("Starting E-Mail listener")
+	listenForMail()
 
 	fmt.Println(fmt.Sprintf("Starting application on port %s", portNumber))
 
@@ -43,8 +51,15 @@ func main() {
 
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Bungalow{})
+	gob.Register(models.BungalowRestriction{})
+	gob.Register(models.Restriction{})
+
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
 
 	app.InProduction = false
 
@@ -62,20 +77,27 @@ func run() error {
 
 	app.Session = session
 
+	log.Println("Connecting to database...")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=webappdb user=postgres password=postgres")
+	if err != nil {
+		log.Fatal("No connection to database! Terminating ...")
+	}
+	log.Println("Successfully connected to database.")
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("cannot create template cache")
-		return err
+		return nil, err
 	}
 
 	app.TemplateCache = tc
 	app.UseCache = false
 
-	repo := handlers.NewRepo(&app)
+	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
 
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 
 	helpers.NewHelpers(&app)
-	return nil
+	return db, nil
 }
