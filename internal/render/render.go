@@ -15,10 +15,13 @@ import (
 )
 
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
-	td.Flash = app.Session.PopString(r.Context(), "flash")
+	td.Success = app.Session.PopString(r.Context(), "success")
 	td.Error = app.Session.PopString(r.Context(), "error")
 	td.Warning = app.Session.PopString(r.Context(), "warning")
 	td.CSRFToken = nosurf.Token(r)
+	if app.Session.Exists(r.Context(), "user_id") {
+		td.IsAuthenticated = 1
+	}
 	return td
 }
 
