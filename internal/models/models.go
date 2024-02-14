@@ -37,7 +37,7 @@ type Reservation struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	Bungalow   Bungalow
-	Processed  int
+	Status     int
 }
 
 type BungalowRestriction struct {

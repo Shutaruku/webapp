@@ -8,11 +8,20 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/YuanData/webapp/internal/config"
 	"github.com/YuanData/webapp/internal/models"
 	"github.com/justinas/nosurf"
 )
+
+var functions = template.FuncMap{
+	"humanReadableDate": HumanReadableDate,
+}
+
+func HumanReadableDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
 
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
 	td.Success = app.Session.PopString(r.Context(), "success")
@@ -73,7 +82,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 
 	for _, page := range pages {
 		name := filepath.Base(page)
-		ts, err := template.New(name).ParseFiles(page)
+		ts, err := template.New(name).Funcs(functions).ParseFiles(page)
 		if err != nil {
 			return theCache, err
 		}
