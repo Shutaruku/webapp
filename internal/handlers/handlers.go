@@ -12,6 +12,7 @@ import (
 	"github.com/YuanData/webapp/internal/config"
 	"github.com/YuanData/webapp/internal/driver"
 	"github.com/YuanData/webapp/internal/forms"
+	"github.com/YuanData/webapp/internal/helpers"
 	"github.com/YuanData/webapp/internal/models"
 	"github.com/YuanData/webapp/internal/render"
 	"github.com/YuanData/webapp/internal/repository"
@@ -483,11 +484,47 @@ func (m *Repository) PostShowLogin(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) Logout(w http.ResponseWriter, r *http.Request) {
 	_ = m.App.Session.Destroy(r.Context())
 	_ = m.App.Session.RenewToken(r.Context())
-	m.App.Session.Put(r.Context(), "success", "Logged out")
+
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 
 }
 
 func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-dashboard-page.tpml", &models.TemplateData{})
+}
+
+func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request) {
+
+	reservations, err := m.DB.AllNewReservations()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["reservations"] = reservations
+
+	render.Template(w, r, "admin-new-reservations-page.tpml", &models.TemplateData{
+		Data: data,
+	})
+}
+
+func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request) {
+
+	reservations, err := m.DB.AllReservations()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["reservations"] = reservations
+
+	render.Template(w, r, "admin-all-reservations-page.tpml", &models.TemplateData{
+		Data: data,
+	})
+}
+
+func (m *Repository) AdminReservationsCalendar(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "admin-reservations-calendar-page.tpml", &models.TemplateData{})
 }
