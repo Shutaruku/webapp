@@ -119,3 +119,39 @@ func (m *testDBRepo) AllNewReservations() ([]models.Reservation, error) {
 
 	return reservations, nil
 }
+
+func (m *testDBRepo) GetReservationByID(id int) (models.Reservation, error) {
+
+	var res models.Reservation
+
+	return res, nil
+}
+
+func (m *testDBRepo) UpdateReservation(r models.Reservation) error {
+
+	return nil
+}
+
+func (m *testDBRepo) DeleteReservation(id int) error {
+
+	return nil
+}
+
+func (m *testDBRepo) UpdateStatusOfReservation(id, status int) error {
+
+	return nil
+}
+
+func (m *testDBRepo) AllBungalows() ([]models.Bungalow, error) {
+
+	var bungalows []models.Bungalow
+
+	return bungalows, nil
+}
+
+func (m *testDBRepo) GetRestrictionsForBungalowByDate(bungalowID int, start, end time.Time) ([]models.BungalowRestriction, error) {
+
+	var restrictions []models.BungalowRestriction
+
+	return restrictions, nil
+}
